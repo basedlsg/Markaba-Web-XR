@@ -1,0 +1,29 @@
+{
+  "name": "markaba-web-xr",
+  "version": "1.0.0",
+  "description": "WebXR implementation of wave-based bubble interactions using Babylon.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:49470/git/basedlsg/Markaba-Web-XR"
+  },
+  "keywords": ["webxr", "babylon.js", "wave-mathematics", "vr", "quest3"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@babylonjs/core": "^8.34.0",
+    "@babylonjs/loaders": "^8.34.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "@vitejs/plugin-basic-ssl": "^2.1.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12"
+  }
+}
