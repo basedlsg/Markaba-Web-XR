@@ -33,20 +33,20 @@ export function createScene(canvas: HTMLCanvasElement): Scene {
   // Create scene
   const scene = new Scene(engine);
 
-  // Background (dark gradient for contrast with glass bubbles)
-  scene.clearColor = new Color4(0.05, 0.05, 0.1, 1.0);
+  // Background (lighter for better visibility during development)
+  scene.clearColor = new Color4(0.1, 0.1, 0.15, 1.0);
 
-  // Enable fog for depth perception
-  scene.fogMode = Scene.FOGMODE_LINEAR;
-  scene.fogColor = new Color3(0.05, 0.05, 0.1);
-  scene.fogStart = 10.0;
-  scene.fogEnd = 50.0;
+  // Disable fog initially (enable later if needed)
+  scene.fogEnabled = false;
 
   // Setup camera
   const camera = createCamera(scene, canvas);
 
   // Setup lighting (important for glass material)
   createLighting(scene);
+
+  // Create environment for reflections
+  createEnvironment(scene);
 
   // Optimize for VR performance
   optimizeScene(scene, engine);
@@ -115,22 +115,24 @@ function createLighting(scene: Scene): void {
     new Vector3(0, 1, 0),
     scene
   );
-  hemiLight.intensity = 0.7;
+  hemiLight.intensity = 1.0; // Increased from 0.7 for better visibility
   hemiLight.diffuse = new Color3(1, 1, 1);
   hemiLight.specular = new Color3(1, 1, 1);
-  hemiLight.groundColor = new Color3(0.2, 0.2, 0.3);
+  hemiLight.groundColor = new Color3(0.5, 0.5, 0.6); // Brighter ground color
+}
 
-  // Optional: Add directional light for better glass reflections
-  // Commented out for performance, enable if needed
-  /*
-  const dirLight = new DirectionalLight(
-    "dirLight",
-    new Vector3(-1, -2, -1),
-    scene
+/**
+ * Create environment for better reflections
+ */
+function createEnvironment(scene: Scene): void {
+  // Create a simple gradient skybox for reflections
+  scene.createDefaultSkybox(
+    undefined,
+    true,
+    10,
+    0.3,
+    false
   );
-  dirLight.intensity = 0.5;
-  dirLight.position = new Vector3(10, 10, 10);
-  */
 }
 
 /**
@@ -143,10 +145,6 @@ function optimizeScene(scene: Scene, engine: Engine): void {
   // Hardware scaling (reduce resolution for better FPS)
   // 1.0 = native resolution, 0.8 = 80% resolution
   engine.setHardwareScalingLevel(1.0); // Start at full quality
-
-  // Disable features not needed for this demo
-  scene.autoClear = false; // Don't auto-clear color/depth
-  scene.autoClearDepthAndStencil = false;
 
   // Block material dirty mechanism (performance)
   scene.blockMaterialDirtyMechanism = true;

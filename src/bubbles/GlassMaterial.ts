@@ -45,15 +45,15 @@ export function createGlassMaterial(
 ): PBRMaterial {
   const glass = new PBRMaterial("bubbleGlass", scene);
 
-  // Default configuration (matches Unity shader aesthetic)
+  // Default configuration (more visible for initial testing)
   const finalConfig: GlassMaterialConfig = {
-    alpha: 0.3,
-    roughness: 0.05,
+    alpha: 0.6, // Increased from 0.3 for better visibility
+    roughness: 0.2, // Slightly rougher for better visibility
     metallic: 0.0,
     indexOfRefraction: 1.52,
-    refractionIntensity: 0.8,
-    tintColor: new Color3(0.8, 0.9, 1.0), // Soft blue-white tint
-    environmentIntensity: 1.2,
+    refractionIntensity: 0.5, // Reduced for better visibility
+    tintColor: new Color3(0.6, 0.8, 1.0), // Brighter blue tint
+    environmentIntensity: 2.0, // Increased for better visibility
     ...config
   };
 
@@ -65,14 +65,17 @@ export function createGlassMaterial(
   glass.metallic = finalConfig.metallic;
   glass.roughness = finalConfig.roughness;
 
-  // Refraction (light bending through glass)
+  // Refraction (light bending through glass) - disabled initially for visibility
   glass.indexOfRefraction = finalConfig.indexOfRefraction;
-  glass.subSurface.isRefractionEnabled = true;
+  glass.subSurface.isRefractionEnabled = false; // Disabled for now
   glass.subSurface.refractionIntensity = finalConfig.refractionIntensity;
   glass.subSurface.tintColor = finalConfig.tintColor;
 
   // Base color (neon-pastel tint)
   glass.albedoColor = finalConfig.tintColor;
+
+  // Add slight emission for visibility
+  glass.emissiveColor = new Color3(0.1, 0.15, 0.2); // Subtle glow
 
   // Environment reflections (Fresnel rim lighting)
   glass.environmentIntensity = finalConfig.environmentIntensity;
