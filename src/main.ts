@@ -47,23 +47,38 @@ class App {
       const bubbleConfig = createDefaultBubbleConfig();
       this.bubbleManager = new BubbleManager(scene, bubbleConfig);
 
-      // Initialize WebXR
+      // Initialize WebXR (optional - app works without it)
       console.log("Initializing WebXR...");
       this.xrManager = new XRSessionManager(scene);
-      const xrSupported = await this.xrManager.initialize();
+      let xrSupported = false;
+
+      try {
+        xrSupported = await this.xrManager.initialize();
+        console.log("WebXR initialization result:", xrSupported);
+      } catch (error) {
+        console.warn("WebXR initialization failed (continuing in desktop mode):", error);
+        xrSupported = false;
+      }
 
       // Setup Enter VR button
       this.setupVRButton(xrSupported);
 
-      // Setup XR state change handler
-      if (xrSupported) {
-        this.xrManager.onStateChange((state) => {
-          if (state === WebXRState.IN_XR) {
-            this.onEnterVR();
-          } else if (state === WebXRState.NOT_IN_XR) {
-            this.onExitVR();
-          }
-        });
+      // Setup XR state change handler (only if XR is fully supported)
+      if (xrSupported && this.xrManager.getExperience()) {
+        try {
+          this.xrManager.onStateChange((state) => {
+            if (state === WebXRState.IN_XR) {
+              this.onEnterVR();
+            } else if (state === WebXRState.NOT_IN_XR) {
+              this.onExitVR();
+            }
+          });
+          console.log("XR state change handler registered");
+        } catch (error) {
+          console.warn("Could not register XR state change handler:", error);
+        }
+      } else {
+        console.log("Running in desktop mode (WebXR not available)");
       }
 
       // Start render loop

@@ -72,7 +72,7 @@ export class XRSessionManager {
    * Call when user clicks "Enter VR" button
    */
   async enterVR(): Promise<boolean> {
-    if (!this.xrExperience) {
+    if (!this.xrExperience || !this.xrExperience.baseExperience) {
       console.warn("WebXR not initialized");
       return false;
     }
@@ -94,7 +94,7 @@ export class XRSessionManager {
    * Exit VR mode
    */
   async exitVR(): Promise<void> {
-    if (!this.xrExperience) return;
+    if (!this.xrExperience || !this.xrExperience.baseExperience) return;
 
     try {
       await this.xrExperience.baseExperience.exitXRAsync();
@@ -108,7 +108,8 @@ export class XRSessionManager {
    * Check if currently in VR
    */
   isInVR(): boolean {
-    return this.xrExperience?.baseExperience.state === WebXRState.IN_XR;
+    if (!this.xrExperience?.baseExperience) return false;
+    return this.xrExperience.baseExperience.state === WebXRState.IN_XR;
   }
 
   /**
@@ -132,7 +133,10 @@ export class XRSessionManager {
    * @param callback - Function to call on state change
    */
   onStateChange(callback: (state: WebXRState) => void): void {
-    if (!this.xrExperience) return;
+    if (!this.xrExperience || !this.xrExperience.baseExperience) {
+      console.warn("XR experience not fully initialized, cannot register state change callback");
+      return;
+    }
 
     this.xrExperience.baseExperience.onStateChangedObservable.add((state) => {
       callback(state);
