@@ -264,15 +264,52 @@ export class WaveCalculator {
   }
 
   /**
-   * Add depth wave oscillation to arc position
-   * Creates forward/backward movement along the spline
+   * Apply wave oscillation to arc position
+   * Creates both vertical (up/down) and depth (forward/back) movement
    *
    * @param basePosition - Base arc position
-   * @param index - Letter index
+   * @param index - Letter index (0-25)
    * @param time - Current time
-   * @param waveAmplitude - How much to oscillate forward/back (default 0.15m)
-   * @param waveFrequency - Wave frequency along the arc (default 2.0)
-   * @returns Position with depth wave applied
+   * @param verticalAmplitude - How much to oscillate up/down (default 0.3m)
+   * @param depthAmplitude - How much to oscillate forward/back (default 0.2m)
+   * @returns Position with wave applied
+   */
+  static applyWaveToArc(
+    basePosition: Vector3,
+    index: number,
+    time: number,
+    verticalAmplitude: number = 0.3,
+    depthAmplitude: number = 0.2
+  ): Vector3 {
+    // Create wave phase that varies across the 26 letters
+    // This makes the wave travel around the arc
+    const wavePhase = (index / 26) * Math.PI * 2; // Full wave across all letters
+
+    // Time-based animation (slow wave movement)
+    const timePhase = time * 0.5;
+
+    // Calculate vertical wave (up and down)
+    const verticalOffset = Math.sin(wavePhase + timePhase) * verticalAmplitude;
+
+    // Calculate depth wave (forward and back)
+    // Offset phase slightly so it's not synchronized with vertical
+    const depthOffset = Math.sin(wavePhase + timePhase + Math.PI / 4) * depthAmplitude;
+
+    // Apply vertical offset (Y axis)
+    const newPosition = basePosition.clone();
+    newPosition.y += verticalOffset;
+
+    // Apply depth offset (along radial direction from center)
+    const radialDirection = new Vector3(basePosition.x, 0, basePosition.z).normalize();
+    newPosition.x += radialDirection.x * depthOffset;
+    newPosition.z += radialDirection.z * depthOffset;
+
+    return newPosition;
+  }
+
+  /**
+   * Add depth wave oscillation to arc position (LEGACY)
+   * @deprecated Use applyWaveToArc instead for better wave effect
    */
   static applyDepthWave(
     basePosition: Vector3,

@@ -183,13 +183,13 @@ export class BubbleManager {
       let worldPos: Vector3;
 
       if (useArcLayout) {
-        // Arc layout: Apply depth wave to create back-and-forth motion
-        worldPos = WaveCalculator.applyDepthWave(
+        // Arc layout: Apply wave to create flowing up/down and forward/back motion
+        worldPos = WaveCalculator.applyWaveToArc(
           bubble.basePosition,
           bubble.index,
           currentTime,
-          0.15,  // waveAmplitude - 15cm forward/backward
-          2.0    // waveFrequency
+          0.3,  // verticalAmplitude - 30cm up/down wave
+          0.2   // depthAmplitude - 20cm forward/backward wave
         );
       } else {
         // Legacy grid layout: Use full wave + breathing animation
@@ -359,9 +359,9 @@ export function createLetterKeyboardConfig(): BubbleConfig {
   return {
     count: 26,          // A-Z letters
     radius: 0.25,       // 25cm bubbles (smaller for letters)
-    arcRadius: 1.2,     // 1.2m from user (arm's reach)
-    arcAngle: 80,       // 80° horizontal arc (±40°)
-    verticalAngle: -25  // 25° downward tilt (desk viewing angle)
+    arcRadius: 1.8,     // 1.8m from user (~6 feet - wraps around)
+    arcAngle: 160,      // 160° horizontal arc (±80° - wide spread)
+    verticalAngle: -15  // 15° downward tilt (comfortable viewing)
   };
 }
 
