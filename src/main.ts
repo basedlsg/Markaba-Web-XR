@@ -23,6 +23,11 @@ class App {
   private debugUI!: DebugUI;
   private audioManager!: LetterAudioManager;
 
+  // Hand proximity tracking
+  private lastNearBubbleLeft: any = null;
+  private lastNearBubbleRight: any = null;
+  private readonly PROXIMITY_DISTANCE = 0.15; // 15cm threshold
+
   async initialize() {
     console.log("🚀 Initializing Markaba Web XR...");
 
@@ -237,30 +242,74 @@ class App {
       // Update bubbles with wave mathematics
       this.bubbleManager.update();
 
-      // Update hand tracking
+      // Update hand tracking and proximity selection
       if (this.handTracking && this.xrManager.isInVR()) {
         this.handTracking.update();
 
-        // TODO: Implement pinch-to-grab interaction
-        // Example: Check if hand is pinching near a bubble
-        /*
-        const leftHand = this.handTracking.getLeftHand();
-        if (leftHand?.isPinching) {
-          const pinchPos = this.handTracking.getPinchPosition('left');
-          if (pinchPos) {
-            const nearestBubble = this.bubbleManager.findNearestBubble(pinchPos, 0.2);
-            if (nearestBubble) {
-              this.bubbleManager.highlightBubble(nearestBubble);
-            }
-          }
-        }
-        */
+        // Check both hands for proximity to bubbles
+        this.checkHandProximity('left');
+        this.checkHandProximity('right');
       }
 
       // Update debug UI
       const stats = this.bubbleManager.getStats();
       this.debugUI.update(stats.bubbleCount, stats.drawCalls);
     });
+  }
+
+  /**
+   * Check if a hand is near any bubble and trigger feedback
+   *
+   * @param handType - 'left' or 'right'
+   */
+  private checkHandProximity(handType: 'left' | 'right'): void {
+    if (!this.handTracking) return;
+
+    // Get hand position
+    const hand = handType === 'left' ?
+      this.handTracking.getLeftHand() :
+      this.handTracking.getRightHand();
+
+    if (!hand || !hand.indexTipPosition) return;
+
+    const handPos = hand.indexTipPosition;
+
+    // Find nearest bubble within threshold
+    const nearestBubble = this.bubbleManager.findNearestBubble(
+      handPos,
+      this.PROXIMITY_DISTANCE
+    );
+
+    // Track last near bubble for this hand
+    const lastNearBubble = handType === 'left' ?
+      this.lastNearBubbleLeft :
+      this.lastNearBubbleRight;
+
+    // If we're near a new bubble (or moved away from previous)
+    if (nearestBubble !== lastNearBubble) {
+      // Reset previous bubble
+      if (lastNearBubble) {
+        this.bubbleManager.resetBubble(lastNearBubble);
+      }
+
+      // Activate new bubble
+      if (nearestBubble && nearestBubble.letter) {
+        console.log(`${handType} hand near letter: ${nearestBubble.letter}`);
+
+        // Visual feedback
+        this.bubbleManager.highlightBubble(nearestBubble, 1.5);
+
+        // Audio feedback
+        this.audioManager.playLetterTone(nearestBubble.letter);
+      }
+
+      // Update tracking
+      if (handType === 'left') {
+        this.lastNearBubbleLeft = nearestBubble;
+      } else {
+        this.lastNearBubbleRight = nearestBubble;
+      }
+    }
   }
 }
 
