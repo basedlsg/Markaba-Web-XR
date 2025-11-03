@@ -10,6 +10,7 @@ import { BubbleManager, createLetterKeyboardConfig } from './bubbles/BubbleManag
 import { XRSessionManager, checkWebXRSupport } from './xr/XRSession';
 import { HandTrackingManager } from './xr/HandTracking';
 import { DebugUI, setupDebugShortcuts } from './ui/DebugUI';
+import { LetterAudioManager } from './audio/LetterAudio';
 import { WebXRState } from '@babylonjs/core';
 
 /**
@@ -20,6 +21,7 @@ class App {
   private xrManager!: XRSessionManager;
   private handTracking: HandTrackingManager | null = null;
   private debugUI!: DebugUI;
+  private audioManager!: LetterAudioManager;
 
   async initialize() {
     console.log("🚀 Initializing Markaba Web XR...");
@@ -46,6 +48,13 @@ class App {
       console.log("Creating letter keyboard bubbles...");
       const bubbleConfig = createLetterKeyboardConfig();
       this.bubbleManager = new BubbleManager(scene, bubbleConfig);
+
+      // Initialize audio system
+      console.log("Initializing audio system...");
+      this.audioManager = new LetterAudioManager();
+
+      // Setup click interaction for desktop testing
+      this.setupClickInteraction(scene);
 
       // Initialize WebXR (optional - app works without it)
       console.log("Initializing WebXR...");
@@ -104,6 +113,36 @@ class App {
         `;
       }
     }
+  }
+
+  /**
+   * Setup click interaction for desktop testing
+   * Click on bubbles to hear their sounds
+   */
+  private setupClickInteraction(scene: any): void {
+    scene.onPointerDown = (evt: PointerEvent, pickResult: any) => {
+      if (pickResult.hit && pickResult.pickedMesh) {
+        // Find which bubble was clicked
+        const clickedInstance = pickResult.pickedMesh;
+
+        // Search through bubbles to find the one that was clicked
+        for (let i = 0; i < this.bubbleManager.getBubbleCount(); i++) {
+          const bubble = this.bubbleManager['bubbles'][i];
+          if (bubble.instance === clickedInstance && bubble.letter) {
+            console.log(`Clicked letter: ${bubble.letter}`);
+
+            // Play the letter's sound
+            this.audioManager.playLetterTone(bubble.letter);
+
+            // Visual feedback
+            this.bubbleManager.highlightBubble(bubble);
+            setTimeout(() => this.bubbleManager.resetBubble(bubble), 200);
+
+            break;
+          }
+        }
+      }
+    };
   }
 
   /**
