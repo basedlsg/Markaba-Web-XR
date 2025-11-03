@@ -185,16 +185,19 @@ export class BubbleManager {
       let worldPos: Vector3;
 
       if (useArcLayout) {
-        // Sine wave layout: Animated flowing wave across entire width
-        worldPos = WaveCalculator.calculateAnimatedSineWave(
-          bubble.index,
-          currentTime,
-          this.config.count,
-          8.0,   // waveWidth: 8m wide
-          1.0,   // waveHeight: 1m vertical wave
-          3.0,   // baseDistance: 3m from user
-          1.5    // baseHeight: 1.5m eye level
-        );
+        // Sine wave layout: Static wave pattern with gentle breathing
+        // Letters stay in their sine wave positions and just "breathe" slowly
+
+        // Start with base static position
+        worldPos = bubble.basePosition.clone();
+
+        // Add gentle synchronized breathing (all letters breathe together)
+        // Slow breathing cycle: ~3 seconds
+        const breathingPhase = currentTime * 0.6; // Slow breathing speed
+        const breathingAmount = Math.sin(breathingPhase) * 0.08; // 8cm forward/back
+
+        // Apply breathing along the direction toward user (Z axis)
+        worldPos.z += breathingAmount;
       } else {
         // Legacy grid layout: Use full wave + breathing animation
         const gridPos = new Vector2(bubble.basePosition.x, bubble.basePosition.z);
