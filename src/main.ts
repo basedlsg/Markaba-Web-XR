@@ -12,6 +12,7 @@ import { HandTrackingManager } from './xr/HandTracking';
 import { DebugUI, setupDebugShortcuts } from './ui/DebugUI';
 import { TextDisplayManager } from './ui/TextDisplay';
 import { LetterAudioManager } from './audio/LetterAudio';
+import { DataCollector } from './ml/DataCollector';
 import { WebXRState } from '@babylonjs/core';
 
 /**
@@ -24,6 +25,7 @@ class App {
   private debugUI!: DebugUI;
   private textDisplay!: TextDisplayManager;
   private audioManager!: LetterAudioManager;
+  private dataCollector!: DataCollector;
 
   // Hand proximity tracking
   private lastNearBubbleLeft: any = null;
@@ -67,6 +69,10 @@ class App {
       // Initialize audio system
       console.log("Initializing audio system...");
       this.audioManager = new LetterAudioManager();
+
+      // Initialize ML data collector
+      console.log("Initializing ML data collector...");
+      this.dataCollector = new DataCollector();
 
       // Setup click interaction for desktop testing
       this.setupClickInteraction(scene);
@@ -149,6 +155,15 @@ class App {
             // Add letter to text display
             this.textDisplay.addLetter(bubble.letter);
 
+            // Record data (use mouse position as "hand" position for desktop)
+            const mousePos = pickResult.pickedPoint || bubble.instance.position;
+            this.dataCollector.recordSelection(
+              bubble.letter,
+              'right', // Desktop clicks counted as right hand
+              mousePos,
+              bubble.instance.position
+            );
+
             // Play the letter's sound
             this.audioManager.playLetterTone(bubble.letter);
 
@@ -226,6 +241,11 @@ class App {
    */
   private onExitVR(): void {
     console.log("👓 Exited VR mode");
+
+    // Print ML data summary
+    console.log('\n=== Session Data Summary ===');
+    this.dataCollector.printSummary();
+    console.log('Typed text:', this.textDisplay.getText());
 
     // Show info panel
     const infoPanel = document.getElementById('info');
@@ -314,6 +334,15 @@ class App {
         if (now - this.lastSelectedTime > this.SELECTION_DEBOUNCE) {
           // Add letter to text display
           this.textDisplay.addLetter(nearestBubble.letter);
+
+          // Record data for ML
+          this.dataCollector.recordSelection(
+            nearestBubble.letter,
+            handType,
+            handPos,
+            nearestBubble.instance.position
+          );
+
           this.lastSelectedTime = now;
         }
 
