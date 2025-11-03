@@ -241,10 +241,11 @@ export class WaveCalculator {
   static calculateSineWavePosition(
     index: number,
     letterCount: number = 26,
-    waveWidth: number = 8.0,      // 8 meters wide (±4m left/right)
+    waveWidth: number = 12.0,     // 12 meters wide (±6m left/right) - MORE SPACE
     waveHeight: number = 1.0,     // 1m vertical wave amplitude
     baseDistance: number = 3.0,   // 3m forward from user
-    baseHeight: number = 1.5      // 1.5m high (eye level)
+    baseHeight: number = 1.5,     // 1.5m high (eye level)
+    depthVariation: number = 1.5  // 1.5m depth variation (forward/back)
   ): Vector3 {
     // Calculate horizontal position from left to right
     // t ranges from -1 (leftmost) to +1 (rightmost)
@@ -257,8 +258,10 @@ export class WaveCalculator {
     // 2 full sine waves across the width for nice flow
     const y = baseHeight + Math.sin(t * Math.PI * 2) * waveHeight;
 
-    // Z: constant distance from user
-    const z = baseDistance;
+    // Z: varying depth - letters at different distances
+    // Use cosine wave offset from sine for depth variation
+    const depthOffset = Math.cos(t * Math.PI * 2 + Math.PI / 4) * depthVariation;
+    const z = baseDistance + depthOffset;
 
     return new Vector3(x, y, z);
   }

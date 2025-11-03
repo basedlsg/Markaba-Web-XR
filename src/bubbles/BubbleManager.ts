@@ -113,14 +113,15 @@ export class BubbleManager {
 
       if (useArcLayout) {
         // Calculate sine wave position for letter keyboard
-        // Spread letters wide along a horizontal sine wave
+        // Spread letters wide along a horizontal sine wave with varying depths
         basePosition = WaveCalculator.calculateSineWavePosition(
           i,
           this.config.count,
-          8.0,   // waveWidth: 8m wide (±4m left/right)
+          12.0,  // waveWidth: 12m wide (±6m left/right) - MORE SPACING
           1.0,   // waveHeight: 1m vertical sine variation
           3.0,   // baseDistance: 3m forward from user
-          1.5    // baseHeight: 1.5m high (eye level)
+          1.5,   // baseHeight: 1.5m high (eye level)
+          1.5    // depthVariation: 1.5m depth range (letters at different depths)
         );
 
         // Assign letter if in keyboard mode (26 bubbles = A-Z)
@@ -185,18 +186,19 @@ export class BubbleManager {
       let worldPos: Vector3;
 
       if (useArcLayout) {
-        // Sine wave layout: Static wave pattern with gentle breathing
-        // Letters stay in their sine wave positions and just "breathe" slowly
+        // Sine wave layout: Static wave pattern with individual breathing
+        // Each letter breathes independently at its own pace
 
         // Start with base static position
         worldPos = bubble.basePosition.clone();
 
-        // Add gentle synchronized breathing (all letters breathe together)
-        // Slow breathing cycle: ~3 seconds
-        const breathingPhase = currentTime * 0.6; // Slow breathing speed
-        const breathingAmount = Math.sin(breathingPhase) * 0.08; // 8cm forward/back
+        // Add individual breathing motion for each letter
+        // Each letter has its own phase so they don't all move together
+        const breathingSpeed = 0.8; // Slow, calm breathing (~2 second cycle)
+        const breathingPhase = currentTime * breathingSpeed + bubble.phase;
+        const breathingAmount = Math.sin(breathingPhase) * 0.15; // 15cm forward/back motion
 
-        // Apply breathing along the direction toward user (Z axis)
+        // Apply breathing along Z axis (toward/away from user)
         worldPos.z += breathingAmount;
       } else {
         // Legacy grid layout: Use full wave + breathing animation
@@ -362,8 +364,10 @@ export class BubbleManager {
  * Helper: Create letter keyboard configuration (26 bubbles on sine wave)
  * This is the default for the VR text input system
  *
- * Layout: Letters spread 8m wide (±4m left/right) on a flowing sine wave
- * User stands in center with wave extending far to both sides
+ * Layout: Letters spread 12m wide (±6m left/right) on static sine wave
+ * - Each letter at different depth (1.5-4.5m from user)
+ * - Individual breathing motion (each letter breathes independently)
+ * - User stands in center with wave extending far to both sides
  */
 export function createLetterKeyboardConfig(): BubbleConfig {
   return {
