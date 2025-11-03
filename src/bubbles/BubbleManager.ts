@@ -138,6 +138,14 @@ export class BubbleManager {
       // Apply position to instance
       bubble.instance.position = worldPos;
     }
+
+    // Log first bubble position occasionally for debugging
+    if (Math.floor(currentTime) % 5 === 0 && this.bubbles.length > 0) {
+      const firstPos = this.bubbles[0].instance.position;
+      if (firstPos) {
+        console.log(`Bubble 0 position: (${firstPos.x.toFixed(2)}, ${firstPos.y.toFixed(2)}, ${firstPos.z.toFixed(2)})`);
+      }
+    }
   }
 
   /**

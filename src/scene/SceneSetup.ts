@@ -12,7 +12,9 @@ import {
   HemisphericLight,
   Vector3,
   Color3,
-  Color4
+  Color4,
+  MeshBuilder,
+  StandardMaterial
 } from '@babylonjs/core';
 
 /**
@@ -47,6 +49,9 @@ export function createScene(canvas: HTMLCanvasElement): Scene {
 
   // Create environment for reflections
   createEnvironment(scene);
+
+  // Add test sphere for debugging
+  createTestSphere(scene);
 
   // Optimize for VR performance
   optimizeScene(scene, engine);
@@ -99,6 +104,8 @@ function createCamera(scene: Scene, canvas: HTMLCanvasElement): ArcRotateCamera 
   camera.angularSensibilityX = 1000;
   camera.angularSensibilityY = 1000;
 
+  console.log(`Camera created: position=(${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)}), radius=${camera.radius}, target=(${camera.target.x}, ${camera.target.y}, ${camera.target.z})`);
+
   return camera;
 }
 
@@ -133,6 +140,29 @@ function createEnvironment(scene: Scene): void {
     0.3,
     false
   );
+}
+
+/**
+ * Create a test sphere to verify rendering is working
+ */
+function createTestSphere(scene: Scene): void {
+  // Create a bright red test sphere at origin
+  const testSphere = MeshBuilder.CreateSphere("testSphere", {
+    diameter: 1,
+    segments: 16
+  }, scene);
+
+  // Position it at origin
+  testSphere.position = new Vector3(0, 0, 0);
+
+  // Create bright material
+  const mat = new StandardMaterial("testMat", scene);
+  mat.diffuseColor = new Color3(1, 0, 0); // Bright red
+  mat.emissiveColor = new Color3(0.5, 0, 0); // Emissive red glow
+  mat.specularColor = new Color3(1, 1, 1);
+  testSphere.material = mat;
+
+  console.log("Test sphere created at origin (0,0,0) - should be visible!");
 }
 
 /**
