@@ -227,15 +227,82 @@ export class WaveCalculator {
   }
 
   /**
-   * Calculate arc position for keyboard letter layout
-   * Places letters along a horizontal arc in front of user
+   * Calculate position along a sine wave line (for letter keyboard)
+   * User is at center (0,0,0), letters spread left/right on a sine wave
    *
    * @param index - Letter index (0-25 for A-Z)
-   * @param letterCount - Total number of letters (default 26)
-   * @param arcRadius - Distance from user (default 1.2m)
-   * @param arcAngleDegrees - Total horizontal arc span (default 80°)
-   * @param verticalAngleDegrees - Downward tilt angle (default -25° for desk view)
-   * @returns 3D position in world space
+   * @param letterCount - Total letters (default 26)
+   * @param waveWidth - Total width of wave in meters (default 8m = ±4m from center)
+   * @param waveHeight - Vertical amplitude of sine wave (default 1.0m)
+   * @param baseDistance - Distance from user forward (default 3.0m)
+   * @param baseHeight - Base height of wave (default 1.5m eye level)
+   * @returns 3D position on sine wave
+   */
+  static calculateSineWavePosition(
+    index: number,
+    letterCount: number = 26,
+    waveWidth: number = 8.0,      // 8 meters wide (±4m left/right)
+    waveHeight: number = 1.0,     // 1m vertical wave amplitude
+    baseDistance: number = 3.0,   // 3m forward from user
+    baseHeight: number = 1.5      // 1.5m high (eye level)
+  ): Vector3 {
+    // Calculate horizontal position from left to right
+    // t ranges from -1 (leftmost) to +1 (rightmost)
+    const t = (index / (letterCount - 1)) * 2 - 1;
+
+    // X: horizontal spread (left negative, right positive)
+    const x = t * (waveWidth / 2);
+
+    // Y: sine wave height variation
+    // 2 full sine waves across the width for nice flow
+    const y = baseHeight + Math.sin(t * Math.PI * 2) * waveHeight;
+
+    // Z: constant distance from user
+    const z = baseDistance;
+
+    return new Vector3(x, y, z);
+  }
+
+  /**
+   * Calculate animated sine wave position with flowing motion
+   *
+   * @param index - Letter index (0-25)
+   * @param time - Current time for animation
+   * @param letterCount - Total letters (default 26)
+   * @param waveWidth - Total width (default 8m)
+   * @param waveHeight - Amplitude (default 1.0m)
+   * @param baseDistance - Forward distance (default 3.0m)
+   * @param baseHeight - Base height (default 1.5m)
+   * @returns Animated position with flowing wave
+   */
+  static calculateAnimatedSineWave(
+    index: number,
+    time: number,
+    letterCount: number = 26,
+    waveWidth: number = 8.0,
+    waveHeight: number = 1.0,
+    baseDistance: number = 3.0,
+    baseHeight: number = 1.5
+  ): Vector3 {
+    const t = (index / (letterCount - 1)) * 2 - 1;
+    const x = t * (waveWidth / 2);
+
+    // Traveling wave effect
+    const timePhase = time * 0.5;
+    const spatialPhase = t * Math.PI * 2;
+    const y = baseHeight + Math.sin(spatialPhase + timePhase) * waveHeight;
+
+    // Subtle depth variation
+    const depthWave = Math.cos(spatialPhase + timePhase) * 0.4;
+    const z = baseDistance + depthWave;
+
+    return new Vector3(x, y, z);
+  }
+
+  /**
+   * Calculate arc position for keyboard letter layout
+   * LEGACY: Original arc-based layout (letters were too close together)
+   * @deprecated Use calculateSineWavePosition for better spacing
    */
   static calculateArcPosition(
     index: number,

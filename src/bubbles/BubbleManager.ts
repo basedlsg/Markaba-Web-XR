@@ -98,10 +98,10 @@ export class BubbleManager {
   }
 
   /**
-   * Create bubble instances in arc layout (for letter keyboard)
+   * Create bubble instances in sine wave layout (for letter keyboard)
    */
   private createBubbles(): void {
-    // Use arc layout if arcRadius is set, otherwise legacy grid
+    // Use sine wave layout if arcRadius is set (config name kept for compatibility)
     const useArcLayout = this.config.arcRadius !== undefined;
 
     // Generate alphabet for keyboard mode (A-Z)
@@ -112,13 +112,15 @@ export class BubbleManager {
       let letter: string | undefined;
 
       if (useArcLayout) {
-        // Calculate arc position for letter keyboard
-        basePosition = WaveCalculator.calculateArcPosition(
+        // Calculate sine wave position for letter keyboard
+        // Spread letters wide along a horizontal sine wave
+        basePosition = WaveCalculator.calculateSineWavePosition(
           i,
           this.config.count,
-          this.config.arcRadius,
-          this.config.arcAngle,
-          this.config.verticalAngle
+          8.0,   // waveWidth: 8m wide (±4m left/right)
+          1.0,   // waveHeight: 1m vertical sine variation
+          3.0,   // baseDistance: 3m forward from user
+          1.5    // baseHeight: 1.5m high (eye level)
         );
 
         // Assign letter if in keyboard mode (26 bubbles = A-Z)
@@ -183,13 +185,15 @@ export class BubbleManager {
       let worldPos: Vector3;
 
       if (useArcLayout) {
-        // Arc layout: Apply wave to create flowing up/down and forward/back motion
-        worldPos = WaveCalculator.applyWaveToArc(
-          bubble.basePosition,
+        // Sine wave layout: Animated flowing wave across entire width
+        worldPos = WaveCalculator.calculateAnimatedSineWave(
           bubble.index,
           currentTime,
-          0.3,  // verticalAmplitude - 30cm up/down wave
-          0.2   // depthAmplitude - 20cm forward/backward wave
+          this.config.count,
+          8.0,   // waveWidth: 8m wide
+          1.0,   // waveHeight: 1m vertical wave
+          3.0,   // baseDistance: 3m from user
+          1.5    // baseHeight: 1.5m eye level
         );
       } else {
         // Legacy grid layout: Use full wave + breathing animation
@@ -352,16 +356,19 @@ export class BubbleManager {
 }
 
 /**
- * Helper: Create letter keyboard configuration (26 bubbles in arc)
+ * Helper: Create letter keyboard configuration (26 bubbles on sine wave)
  * This is the default for the VR text input system
+ *
+ * Layout: Letters spread 8m wide (±4m left/right) on a flowing sine wave
+ * User stands in center with wave extending far to both sides
  */
 export function createLetterKeyboardConfig(): BubbleConfig {
   return {
     count: 26,          // A-Z letters
     radius: 0.25,       // 25cm bubbles (smaller for letters)
-    arcRadius: 1.8,     // 1.8m from user (~6 feet - wraps around)
-    arcAngle: 160,      // 160° horizontal arc (±80° - wide spread)
-    verticalAngle: -15  // 15° downward tilt (comfortable viewing)
+    arcRadius: 1.8,     // Triggers sine wave mode (value not used)
+    arcAngle: 160,      // Not used for sine wave
+    verticalAngle: -15  // Not used for sine wave
   };
 }
 
