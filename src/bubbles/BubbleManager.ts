@@ -111,23 +111,32 @@ export class BubbleManager {
       let basePosition: Vector3;
       let letter: string | undefined;
 
-      if (useArcLayout) {
-        // Calculate sine wave position for letter keyboard
-        // Spread letters wide along a horizontal sine wave with varying depths
+      // Generate random phase for this bubble (used for breathing AND depth randomization)
+      const phase = WaveCalculator.generateRandomPhase();
+
+      // Assign letter first (needed for position calculation)
+      if (this.config.arcRadius !== undefined && this.config.count === 26 && i < alphabet.length) {
+        letter = alphabet[i];
+      }
+
+      if (useArcLayout && letter) {
+        // Calculate sine wave position with frequency-based depth
+        // Uses letter to determine depth zone (frequent = close, rare = far)
+        // Uses phase as random seed for depth variation within zone
         basePosition = WaveCalculator.calculateSineWavePosition(
           i,
+          letter,
           this.config.count,
-          12.0,  // waveWidth: 12m wide (±6m left/right) - MORE SPACING
-          1.0,   // waveHeight: 1m vertical sine variation
-          3.0,   // baseDistance: 3m forward from user
-          1.5,   // baseHeight: 1.5m high (eye level)
-          1.5    // depthVariation: 1.5m depth range (letters at different depths)
+          phase / (Math.PI * 2)  // Convert phase (0-2π) to seed (0-1)
         );
-
-        // Assign letter if in keyboard mode (26 bubbles = A-Z)
-        if (this.config.count === 26 && i < alphabet.length) {
-          letter = alphabet[i];
-        }
+      } else if (useArcLayout) {
+        // Fallback if no letter assigned (shouldn't happen)
+        basePosition = WaveCalculator.calculateSineWavePosition(
+          i,
+          'M',  // Default to mid-frequency letter
+          this.config.count,
+          phase / (Math.PI * 2)
+        );
       } else {
         // Legacy grid layout (for backwards compatibility)
         const gridPos = WaveCalculator.calculateGridPosition(
@@ -138,9 +147,6 @@ export class BubbleManager {
         // Convert 2D grid to 3D position (flat on XZ plane)
         basePosition = new Vector3(gridPos.x, 0, gridPos.y);
       }
-
-      // Generate random phase for breathing animation
-      const phase = WaveCalculator.generateRandomPhase();
 
       // Create instance (shares geometry with baseMesh)
       const instance = this.baseMesh.createInstance(`bubble_${i}`);
@@ -364,16 +370,22 @@ export class BubbleManager {
  * Helper: Create letter keyboard configuration (26 bubbles on sine wave)
  * This is the default for the VR text input system
  *
- * Layout: Letters spread 12m wide (±6m left/right) on static sine wave
- * - Each letter at different depth (1.5-4.5m from user)
+ * Layout design based on corpus linguistics research:
+ * - Width: 5m (±2.5m left/right) - comfortable viewing angle
+ * - Height: 0.8m sine wave variation (organizational structure)
+ * - Depth: Frequency-based zones with randomization
+ *   - Most frequent letters (E,T,A,O,I,N,S,R,H): 2.2-2.7m (close, easy reach)
+ *   - Medium frequency (L,D,C,U,M,F,P,G,W): 2.7-3.5m (mid-range)
+ *   - Least frequent (Y,B,V,K,X,J,Q,Z): 3.5-4.3m (farther, still visible)
+ * - Alphabetically organized left-to-right (A→Z)
  * - Individual breathing motion (each letter breathes independently)
- * - User stands in center with wave extending far to both sides
+ * - User positioned in center of layout
  */
 export function createLetterKeyboardConfig(): BubbleConfig {
   return {
     count: 26,          // A-Z letters
-    radius: 0.25,       // 25cm bubbles (smaller for letters)
-    arcRadius: 1.8,     // Triggers sine wave mode (value not used)
+    radius: 0.25,       // 25cm bubbles
+    arcRadius: 1.8,     // Triggers sine wave mode (actual value calculated internally)
     arcAngle: 160,      // Not used for sine wave
     verticalAngle: -15  // Not used for sine wave
   };

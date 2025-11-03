@@ -13,6 +13,19 @@
 import { Vector2, Vector3 } from '@babylonjs/core';
 
 /**
+ * Letter frequency data from academic corpus linguistics research
+ * Source: Peter Norvig's analysis (Google Books corpus - 743 billion words)
+ * and British National Corpus (90 million words)
+ *
+ * Ranking: E T A O I N S R H L D C U M F P G W Y B V K X J Q Z
+ */
+const LETTER_FREQUENCY_ZONES = {
+  close: ['E', 'T', 'A', 'O', 'I', 'N', 'S', 'R', 'H'],      // Top 9 (most frequent)
+  mid: ['L', 'D', 'C', 'U', 'M', 'F', 'P', 'G', 'W'],        // Medium 9
+  far: ['Y', 'B', 'V', 'K', 'X', 'J', 'Q', 'Z']              // Bottom 8 (least frequent)
+};
+
+/**
  * Settings for a single wave component
  */
 export interface WaveComponent {
@@ -227,41 +240,83 @@ export class WaveCalculator {
   }
 
   /**
-   * Calculate position along a sine wave line (for letter keyboard)
+   * Get depth zone for a letter based on frequency
+   * Most frequent letters are closer, least frequent are farther
+   *
+   * @param letter - Letter (A-Z)
+   * @returns Depth zone: 'close', 'mid', or 'far'
+   */
+  static getLetterDepthZone(letter: string): 'close' | 'mid' | 'far' {
+    const upper = letter.toUpperCase();
+    if (LETTER_FREQUENCY_ZONES.close.includes(upper)) return 'close';
+    if (LETTER_FREQUENCY_ZONES.mid.includes(upper)) return 'mid';
+    if (LETTER_FREQUENCY_ZONES.far.includes(upper)) return 'far';
+    return 'mid'; // Default to mid if not found
+  }
+
+  /**
+   * Calculate position along a sine wave line with frequency-based depth
    * User is at center (0,0,0), letters spread left/right on a sine wave
    *
+   * Layout:
+   * - Width: 5m (±2.5m from center) - comfortable viewing angle
+   * - Height: 1m sine wave variation (up/down organization)
+   * - Depth: Frequency-based zones with randomization
+   *   - Close (2.2-2.7m): Most frequent letters (E,T,A,O,I,N,S,R,H)
+   *   - Mid (2.7-3.5m): Medium frequency (L,D,C,U,M,F,P,G,W)
+   *   - Far (3.5-4.3m): Least frequent (Y,B,V,K,X,J,Q,Z)
+   *
    * @param index - Letter index (0-25 for A-Z)
+   * @param letter - The actual letter (for frequency lookup)
    * @param letterCount - Total letters (default 26)
-   * @param waveWidth - Total width of wave in meters (default 8m = ±4m from center)
-   * @param waveHeight - Vertical amplitude of sine wave (default 1.0m)
-   * @param baseDistance - Distance from user forward (default 3.0m)
-   * @param baseHeight - Base height of wave (default 1.5m eye level)
-   * @returns 3D position on sine wave
+   * @param randomSeed - Random seed for consistent randomization (0-1)
+   * @returns 3D position on sine wave with frequency-based depth
    */
   static calculateSineWavePosition(
     index: number,
+    letter: string,
     letterCount: number = 26,
-    waveWidth: number = 12.0,     // 12 meters wide (±6m left/right) - MORE SPACE
-    waveHeight: number = 1.0,     // 1m vertical wave amplitude
-    baseDistance: number = 3.0,   // 3m forward from user
-    baseHeight: number = 1.5,     // 1.5m high (eye level)
-    depthVariation: number = 1.5  // 1.5m depth variation (forward/back)
+    randomSeed: number = 0.5
   ): Vector3 {
-    // Calculate horizontal position from left to right
-    // t ranges from -1 (leftmost) to +1 (rightmost)
+    // Layout parameters (balanced for comfort)
+    const waveWidth = 5.0;       // 5m wide (±2.5m left/right)
+    const waveHeight = 0.8;      // 0.8m vertical sine wave
+    const baseHeight = 1.5;      // 1.5m eye level
+
+    // Calculate horizontal position from left to right (alphabetical)
+    // t ranges from -1 (leftmost 'A') to +1 (rightmost 'Z')
     const t = (index / (letterCount - 1)) * 2 - 1;
 
-    // X: horizontal spread (left negative, right positive)
+    // X: horizontal spread (alphabetically organized)
     const x = t * (waveWidth / 2);
 
-    // Y: sine wave height variation
-    // 2 full sine waves across the width for nice flow
+    // Y: sine wave height variation (organization only, not depth)
+    // 2 full sine waves across the width
     const y = baseHeight + Math.sin(t * Math.PI * 2) * waveHeight;
 
-    // Z: varying depth - letters at different distances
-    // Use cosine wave offset from sine for depth variation
-    const depthOffset = Math.cos(t * Math.PI * 2 + Math.PI / 4) * depthVariation;
-    const z = baseDistance + depthOffset;
+    // Z: frequency-based depth zones with randomization
+    const zone = this.getLetterDepthZone(letter);
+    let baseDepth: number;
+    let randomRange: number;
+
+    switch (zone) {
+      case 'close':
+        baseDepth = 2.45;      // Center of 2.2-2.7m range
+        randomRange = 0.25;    // ±0.25m randomization
+        break;
+      case 'mid':
+        baseDepth = 3.1;       // Center of 2.7-3.5m range
+        randomRange = 0.4;     // ±0.4m randomization
+        break;
+      case 'far':
+        baseDepth = 3.9;       // Center of 3.5-4.3m range
+        randomRange = 0.4;     // ±0.4m randomization
+        break;
+    }
+
+    // Add randomization within zone (seeded for consistency)
+    const randomOffset = (randomSeed - 0.5) * 2 * randomRange;
+    const z = baseDepth + randomOffset;
 
     return new Vector3(x, y, z);
   }
