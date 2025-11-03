@@ -10,6 +10,7 @@ import { BubbleManager, createLetterKeyboardConfig } from './bubbles/BubbleManag
 import { XRSessionManager, checkWebXRSupport } from './xr/XRSession';
 import { HandTrackingManager } from './xr/HandTracking';
 import { DebugUI, setupDebugShortcuts } from './ui/DebugUI';
+import { TextDisplayManager } from './ui/TextDisplay';
 import { LetterAudioManager } from './audio/LetterAudio';
 import { WebXRState } from '@babylonjs/core';
 
@@ -21,12 +22,17 @@ class App {
   private xrManager!: XRSessionManager;
   private handTracking: HandTrackingManager | null = null;
   private debugUI!: DebugUI;
+  private textDisplay!: TextDisplayManager;
   private audioManager!: LetterAudioManager;
 
   // Hand proximity tracking
   private lastNearBubbleLeft: any = null;
   private lastNearBubbleRight: any = null;
   private readonly PROXIMITY_DISTANCE = 0.15; // 15cm threshold
+
+  // Debounce to prevent duplicate letter entries
+  private lastSelectedTime: number = 0;
+  private readonly SELECTION_DEBOUNCE = 500; // 500ms between selections
 
   async initialize() {
     console.log("🚀 Initializing Markaba Web XR...");
@@ -53,6 +59,10 @@ class App {
       console.log("Creating letter keyboard bubbles...");
       const bubbleConfig = createLetterKeyboardConfig();
       this.bubbleManager = new BubbleManager(scene, bubbleConfig);
+
+      // Initialize text display
+      console.log("Creating text display...");
+      this.textDisplay = new TextDisplayManager(scene);
 
       // Initialize audio system
       console.log("Initializing audio system...");
@@ -135,6 +145,9 @@ class App {
           const bubble = this.bubbleManager['bubbles'][i];
           if (bubble.instance === clickedInstance && bubble.letter) {
             console.log(`Clicked letter: ${bubble.letter}`);
+
+            // Add letter to text display
+            this.textDisplay.addLetter(bubble.letter);
 
             // Play the letter's sound
             this.audioManager.playLetterTone(bubble.letter);
@@ -296,10 +309,18 @@ class App {
       if (nearestBubble && nearestBubble.letter) {
         console.log(`${handType} hand near letter: ${nearestBubble.letter}`);
 
-        // Visual feedback
+        // Check debounce - only add letter if enough time has passed
+        const now = Date.now();
+        if (now - this.lastSelectedTime > this.SELECTION_DEBOUNCE) {
+          // Add letter to text display
+          this.textDisplay.addLetter(nearestBubble.letter);
+          this.lastSelectedTime = now;
+        }
+
+        // Visual feedback (always show, even if debounced)
         this.bubbleManager.highlightBubble(nearestBubble, 1.5);
 
-        // Audio feedback
+        // Audio feedback (always play, even if debounced)
         this.audioManager.playLetterTone(nearestBubble.letter);
       }
 
