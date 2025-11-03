@@ -82,9 +82,6 @@ export class BubbleManager {
     // Hide the base mesh (only instances are visible)
     this.baseMesh.isVisible = false;
 
-    // Enable instancing for better performance
-    this.baseMesh.registerInstancedBuffer("position", 3);
-
     // Create bubble instances
     this.createBubbles();
 
