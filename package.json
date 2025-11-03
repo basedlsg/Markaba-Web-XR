@@ -13,11 +13,18 @@
     "type": "git",
     "url": "http://local_proxy@127.0.0.1:49470/git/basedlsg/Markaba-Web-XR"
   },
-  "keywords": ["webxr", "babylon.js", "wave-mathematics", "vr", "quest3"],
+  "keywords": [
+    "webxr",
+    "babylon.js",
+    "wave-mathematics",
+    "vr",
+    "quest3"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@babylonjs/core": "^8.34.0",
+    "@babylonjs/gui": "^8.34.0",
     "@babylonjs/loaders": "^8.34.0"
   },
   "devDependencies": {

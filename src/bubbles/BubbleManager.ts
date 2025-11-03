@@ -18,6 +18,7 @@ import {
 } from '@babylonjs/core';
 import { WaveCalculator, WaveSettings, BreathingSettings } from '../math/WaveCalculator';
 import { createGlassMaterial } from './GlassMaterial';
+import { createLetterLabel, getDefaultLabelConfig } from './LetterLabel';
 
 /**
  * Bubble configuration
@@ -42,6 +43,8 @@ interface BubbleData {
   basePosition: Vector3;    // Base arc position (without waves)
   index: number;            // Bubble index (for arc positioning)
   phase: number;            // Individual phase offset
+  letter?: string;          // Letter (A-Z) for keyboard mode
+  labelMesh?: Mesh;         // Text label mesh (for keyboard mode)
 }
 
 /**
@@ -101,8 +104,12 @@ export class BubbleManager {
     // Use arc layout if arcRadius is set, otherwise legacy grid
     const useArcLayout = this.config.arcRadius !== undefined;
 
+    // Generate alphabet for keyboard mode (A-Z)
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
     for (let i = 0; i < this.config.count; i++) {
       let basePosition: Vector3;
+      let letter: string | undefined;
 
       if (useArcLayout) {
         // Calculate arc position for letter keyboard
@@ -113,6 +120,11 @@ export class BubbleManager {
           this.config.arcAngle,
           this.config.verticalAngle
         );
+
+        // Assign letter if in keyboard mode (26 bubbles = A-Z)
+        if (this.config.count === 26 && i < alphabet.length) {
+          letter = alphabet[i];
+        }
       } else {
         // Legacy grid layout (for backwards compatibility)
         const gridPos = WaveCalculator.calculateGridPosition(
@@ -130,13 +142,31 @@ export class BubbleManager {
       // Create instance (shares geometry with baseMesh)
       const instance = this.baseMesh.createInstance(`bubble_${i}`);
 
+      // Create letter label if in keyboard mode
+      let labelMesh: Mesh | undefined;
+      if (letter) {
+        labelMesh = createLetterLabel(
+          this.scene,
+          instance,
+          letter,
+          getDefaultLabelConfig()
+        );
+      }
+
       // Store bubble data
       this.bubbles.push({
         instance,
         basePosition,
         index: i,
-        phase
+        phase,
+        letter,
+        labelMesh
       });
+    }
+
+    // Log letter assignment for debugging
+    if (useArcLayout && this.config.count === 26) {
+      console.log('Letter keyboard created:', this.bubbles.map(b => b.letter).join(''));
     }
   }
 
@@ -213,21 +243,31 @@ export class BubbleManager {
    *
    * @param worldPos - Target position
    * @param maxDistance - Maximum search distance
-   * @returns Nearest bubble instance or null
+   * @returns Nearest bubble data or null
    */
-  findNearestBubble(worldPos: Vector3, maxDistance: number = Infinity): InstancedMesh | null {
-    let nearestBubble: InstancedMesh | null = null;
+  findNearestBubble(worldPos: Vector3, maxDistance: number = Infinity): BubbleData | null {
+    let nearestBubble: BubbleData | null = null;
     let nearestDistance = maxDistance;
 
     for (const bubble of this.bubbles) {
       const distance = Vector3.Distance(worldPos, bubble.instance.position);
       if (distance < nearestDistance) {
         nearestDistance = distance;
-        nearestBubble = bubble.instance;
+        nearestBubble = bubble;
       }
     }
 
     return nearestBubble;
+  }
+
+  /**
+   * Find bubble by letter (for keyboard mode)
+   *
+   * @param letter - Letter to find (A-Z)
+   * @returns Bubble data or null
+   */
+  findBubbleByLetter(letter: string): BubbleData | null {
+    return this.bubbles.find(b => b.letter === letter.toUpperCase()) || null;
   }
 
   /**
@@ -236,15 +276,15 @@ export class BubbleManager {
    *
    * @param worldPos - Center position
    * @param radius - Search radius
-   * @returns Array of bubble instances
+   * @returns Array of bubble data
    */
-  getBubblesInRadius(worldPos: Vector3, radius: number): InstancedMesh[] {
-    const bubblesInRange: InstancedMesh[] = [];
+  getBubblesInRadius(worldPos: Vector3, radius: number): BubbleData[] {
+    const bubblesInRange: BubbleData[] = [];
 
     for (const bubble of this.bubbles) {
       const distance = Vector3.Distance(worldPos, bubble.instance.position);
       if (distance <= radius) {
-        bubblesInRange.push(bubble.instance);
+        bubblesInRange.push(bubble);
       }
     }
 
@@ -254,12 +294,12 @@ export class BubbleManager {
   /**
    * Highlight a bubble (for selection/hover feedback)
    *
-   * @param bubble - Bubble instance to highlight
+   * @param bubble - Bubble data to highlight
    * @param intensity - Glow intensity (1.0 = normal, 2.0 = double)
    */
-  highlightBubble(bubble: InstancedMesh, intensity: number = 2.0): void {
+  highlightBubble(bubble: BubbleData, intensity: number = 2.0): void {
     // Increase scale slightly
-    bubble.scaling.setAll(1.2);
+    bubble.instance.scaling.setAll(1.2);
 
     // Material glow is handled by the material itself
     // This is a placeholder for future visual feedback
@@ -268,19 +308,22 @@ export class BubbleManager {
   /**
    * Reset bubble to normal appearance
    *
-   * @param bubble - Bubble instance to reset
+   * @param bubble - Bubble data to reset
    */
-  resetBubble(bubble: InstancedMesh): void {
-    bubble.scaling.setAll(1.0);
+  resetBubble(bubble: BubbleData): void {
+    bubble.instance.scaling.setAll(1.0);
   }
 
   /**
    * Dispose all bubbles and free memory
    */
   dispose(): void {
-    // Dispose instances
+    // Dispose instances and labels
     for (const bubble of this.bubbles) {
       bubble.instance.dispose();
+      if (bubble.labelMesh) {
+        bubble.labelMesh.dispose();
+      }
     }
 
     // Dispose base mesh
