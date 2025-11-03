@@ -25,8 +25,13 @@ import { createGlassMaterial } from './GlassMaterial';
 export interface BubbleConfig {
   count: number;        // Number of bubbles
   radius: number;       // Bubble radius
-  gridSize: number;     // Grid dimensions (e.g., 7x7 = 49 bubbles)
-  spacing: number;      // Distance between bubbles
+  // Arc layout settings (for letter keyboard)
+  arcRadius?: number;   // Distance from user (default 1.2m)
+  arcAngle?: number;    // Horizontal arc span (default 80°)
+  verticalAngle?: number; // Downward tilt (default -25°)
+  // Legacy grid settings
+  gridSize?: number;    // Grid dimensions (e.g., 7x7 = 49 bubbles)
+  spacing?: number;     // Distance between bubbles
 }
 
 /**
@@ -34,7 +39,8 @@ export interface BubbleConfig {
  */
 interface BubbleData {
   instance: InstancedMesh;  // Mesh instance
-  gridPosition: Vector2;    // Base grid position
+  basePosition: Vector3;    // Base arc position (without waves)
+  index: number;            // Bubble index (for arc positioning)
   phase: number;            // Individual phase offset
 }
 
@@ -89,16 +95,34 @@ export class BubbleManager {
   }
 
   /**
-   * Create bubble instances in grid layout
+   * Create bubble instances in arc layout (for letter keyboard)
    */
   private createBubbles(): void {
+    // Use arc layout if arcRadius is set, otherwise legacy grid
+    const useArcLayout = this.config.arcRadius !== undefined;
+
     for (let i = 0; i < this.config.count; i++) {
-      // Calculate grid position
-      const gridPos = WaveCalculator.calculateGridPosition(
-        i,
-        this.config.gridSize,
-        this.config.spacing
-      );
+      let basePosition: Vector3;
+
+      if (useArcLayout) {
+        // Calculate arc position for letter keyboard
+        basePosition = WaveCalculator.calculateArcPosition(
+          i,
+          this.config.count,
+          this.config.arcRadius,
+          this.config.arcAngle,
+          this.config.verticalAngle
+        );
+      } else {
+        // Legacy grid layout (for backwards compatibility)
+        const gridPos = WaveCalculator.calculateGridPosition(
+          i,
+          this.config.gridSize!,
+          this.config.spacing!
+        );
+        // Convert 2D grid to 3D position (flat on XZ plane)
+        basePosition = new Vector3(gridPos.x, 0, gridPos.y);
+      }
 
       // Generate random phase for breathing animation
       const phase = WaveCalculator.generateRandomPhase();
@@ -109,7 +133,8 @@ export class BubbleManager {
       // Store bubble data
       this.bubbles.push({
         instance,
-        gridPosition: gridPos,
+        basePosition,
+        index: i,
         phase
       });
     }
@@ -121,16 +146,32 @@ export class BubbleManager {
    */
   update(): void {
     const currentTime = Date.now() / 1000 - this.startTime;
+    const useArcLayout = this.config.arcRadius !== undefined;
 
     // Update each bubble position
     for (const bubble of this.bubbles) {
-      const worldPos = WaveCalculator.calculateBubblePosition(
-        bubble.gridPosition,
-        currentTime,
-        bubble.phase,
-        this.waveSettings,
-        this.breathingSettings
-      );
+      let worldPos: Vector3;
+
+      if (useArcLayout) {
+        // Arc layout: Apply depth wave to create back-and-forth motion
+        worldPos = WaveCalculator.applyDepthWave(
+          bubble.basePosition,
+          bubble.index,
+          currentTime,
+          0.15,  // waveAmplitude - 15cm forward/backward
+          2.0    // waveFrequency
+        );
+      } else {
+        // Legacy grid layout: Use full wave + breathing animation
+        const gridPos = new Vector2(bubble.basePosition.x, bubble.basePosition.z);
+        worldPos = WaveCalculator.calculateBubblePosition(
+          gridPos,
+          currentTime,
+          bubble.phase,
+          this.waveSettings,
+          this.breathingSettings
+        );
+      }
 
       // Apply position to instance
       bubble.instance.position = worldPos;
@@ -268,7 +309,21 @@ export class BubbleManager {
 }
 
 /**
- * Helper: Create default bubble configuration
+ * Helper: Create letter keyboard configuration (26 bubbles in arc)
+ * This is the default for the VR text input system
+ */
+export function createLetterKeyboardConfig(): BubbleConfig {
+  return {
+    count: 26,          // A-Z letters
+    radius: 0.25,       // 25cm bubbles (smaller for letters)
+    arcRadius: 1.2,     // 1.2m from user (arm's reach)
+    arcAngle: 80,       // 80° horizontal arc (±40°)
+    verticalAngle: -25  // 25° downward tilt (desk viewing angle)
+  };
+}
+
+/**
+ * Helper: Create default bubble configuration (LEGACY)
  */
 export function createDefaultBubbleConfig(): BubbleConfig {
   return {

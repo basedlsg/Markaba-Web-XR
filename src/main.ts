@@ -6,7 +6,7 @@
  */
 
 import { createScene, enableVROptimizations } from './scene/SceneSetup';
-import { BubbleManager, createDefaultBubbleConfig } from './bubbles/BubbleManager';
+import { BubbleManager, createLetterKeyboardConfig } from './bubbles/BubbleManager';
 import { XRSessionManager, checkWebXRSupport } from './xr/XRSession';
 import { HandTrackingManager } from './xr/HandTracking';
 import { DebugUI, setupDebugShortcuts } from './ui/DebugUI';
@@ -42,9 +42,9 @@ class App {
       this.debugUI = new DebugUI(scene);
       setupDebugShortcuts(this.debugUI);
 
-      // Create bubbles
-      console.log("Creating bubbles...");
-      const bubbleConfig = createDefaultBubbleConfig();
+      // Create bubbles (26-letter keyboard arc layout)
+      console.log("Creating letter keyboard bubbles...");
+      const bubbleConfig = createLetterKeyboardConfig();
       this.bubbleManager = new BubbleManager(scene, bubbleConfig);
 
       // Initialize WebXR (optional - app works without it)

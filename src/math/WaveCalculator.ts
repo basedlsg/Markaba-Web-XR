@@ -227,8 +227,76 @@ export class WaveCalculator {
   }
 
   /**
+   * Calculate arc position for keyboard letter layout
+   * Places letters along a horizontal arc in front of user
+   *
+   * @param index - Letter index (0-25 for A-Z)
+   * @param letterCount - Total number of letters (default 26)
+   * @param arcRadius - Distance from user (default 1.2m)
+   * @param arcAngleDegrees - Total horizontal arc span (default 80°)
+   * @param verticalAngleDegrees - Downward tilt angle (default -25° for desk view)
+   * @returns 3D position in world space
+   */
+  static calculateArcPosition(
+    index: number,
+    letterCount: number = 26,
+    arcRadius: number = 1.2,
+    arcAngleDegrees: number = 80,
+    verticalAngleDegrees: number = -25
+  ): Vector3 {
+    // Calculate horizontal angle for this letter
+    // Spread letters evenly across the arc
+    const angleStep = arcAngleDegrees / (letterCount - 1);
+    const horizontalAngle = (index * angleStep - arcAngleDegrees / 2) * (Math.PI / 180);
+
+    // Convert vertical angle to radians
+    const verticalAngle = verticalAngleDegrees * (Math.PI / 180);
+
+    // Calculate 3D position using spherical coordinates
+    // X: horizontal position (left to right)
+    // Y: vertical position (downward for desk view)
+    // Z: depth (distance from user)
+    const x = arcRadius * Math.sin(horizontalAngle) * Math.cos(verticalAngle);
+    const y = arcRadius * Math.sin(verticalAngle);
+    const z = arcRadius * Math.cos(horizontalAngle) * Math.cos(verticalAngle);
+
+    return new Vector3(x, y, z);
+  }
+
+  /**
+   * Add depth wave oscillation to arc position
+   * Creates forward/backward movement along the spline
+   *
+   * @param basePosition - Base arc position
+   * @param index - Letter index
+   * @param time - Current time
+   * @param waveAmplitude - How much to oscillate forward/back (default 0.15m)
+   * @param waveFrequency - Wave frequency along the arc (default 2.0)
+   * @returns Position with depth wave applied
+   */
+  static applyDepthWave(
+    basePosition: Vector3,
+    index: number,
+    time: number,
+    waveAmplitude: number = 0.15,
+    waveFrequency: number = 2.0
+  ): Vector3 {
+    // Calculate wave offset along the arc
+    const wavePhase = index * (Math.PI / 13); // Half wavelength across 26 letters
+    const depthOffset = Math.sin(time * 0.5 + wavePhase) * waveAmplitude;
+
+    // Apply depth offset along the Z-axis (toward/away from user)
+    // Normalize the direction vector and scale by offset
+    const direction = basePosition.clone().normalize();
+    const offset = direction.scale(depthOffset);
+
+    return basePosition.add(offset);
+  }
+
+  /**
    * Calculate grid position for bubble index
-   * Creates evenly-spaced grid layout
+   * LEGACY: Used for original grid demo
+   * Keeping for backwards compatibility
    *
    * @param index - Bubble index (0 to count-1)
    * @param gridSize - Number of bubbles per row/column
