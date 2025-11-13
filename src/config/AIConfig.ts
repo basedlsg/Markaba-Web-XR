@@ -2,18 +2,24 @@
  * AI Configuration
  *
  * Groq API configuration for predictive text
- * For production, use environment variables
+ * Set VITE_GROQ_API_KEY in your .env file
+ *
+ * Example .env file:
+ * VITE_GROQ_API_KEY=gsk_your_key_here
  */
 
-import { GROQ_API_KEY } from './secrets';
-
-// Get API key from environment or use default from secrets file
+// Get API key from environment variable
 // @ts-ignore - Vite env types
-const envApiKey = typeof import.meta?.env?.VITE_GROQ_API_KEY === 'string' ? import.meta.env.VITE_GROQ_API_KEY : null;
+const envApiKey = typeof import.meta?.env?.VITE_GROQ_API_KEY === 'string' ? import.meta.env.VITE_GROQ_API_KEY : '';
+
+// Warn if no API key is set
+if (!envApiKey) {
+  console.warn('⚠️  VITE_GROQ_API_KEY not set in .env file. AI predictions will use frequency fallback only.');
+}
 
 export const AI_CONFIG = {
-  // Groq API key - can be overridden by environment variable
-  groqApiKey: envApiKey || GROQ_API_KEY,
+  // Groq API key from environment variable (.env file)
+  groqApiKey: envApiKey,
 
   // Model selection
   model: 'llama-3.1-8b-instant',
@@ -26,6 +32,6 @@ export const AI_CONFIG = {
   // Temperature (0.0-1.0, lower = more deterministic)
   temperature: 0.3,
 
-  // Enable/disable AI predictions
-  enabled: true
+  // Enable/disable AI predictions (automatically disabled if no API key)
+  enabled: envApiKey.length > 0
 };
