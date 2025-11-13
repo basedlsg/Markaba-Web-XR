@@ -367,19 +367,18 @@ export class BubbleManager {
 }
 
 /**
- * Helper: Create letter keyboard configuration (26 bubbles on sine wave)
+ * Helper: Create letter keyboard configuration (26 bubbles on 3D wave)
  * This is the default for the VR text input system
  *
- * Layout design based on corpus linguistics research:
+ * Layout design using unified 3D wave pattern:
  * - Width: 5m (±2.5m left/right) - comfortable viewing angle
- * - Height: 0.8m sine wave variation (organizational structure)
- * - Depth: Frequency-based zones with randomization (UPDATED for dramatic depth)
- *   - Most frequent letters (E,T,A,O,I,N,S,R,H): 0.8-1.5m (toward player, near space)
- *   - Medium frequency (L,D,C,U,M,F,P,G,W): 1.5-2.8m (comfortable mid-range)
- *   - Least frequent (Y,B,V,K,X,J,Q,Z): 2.8-4.5m (farther back, still visible)
+ * - Height: 0.8m sine wave variation (vertical undulation)
+ * - Depth: 1.2m cosine wave variation (depth undulation)
+ *   - Range: 1.3m (close) to 3.7m (far)
+ *   - Creates flowing 3D wave pattern, not random frequency zones
  * - Alphabetically organized left-to-right (A→Z)
  * - Individual breathing motion (each letter breathes independently)
- * - User positioned in center of layout
+ * - User positioned in center, letters flow in 3D wave around them
  */
 export function createLetterKeyboardConfig(): BubbleConfig {
   return {

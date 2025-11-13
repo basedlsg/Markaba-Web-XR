@@ -255,22 +255,24 @@ export class WaveCalculator {
   }
 
   /**
-   * Calculate position along a sine wave line with frequency-based depth
-   * User is at center (0,0,0), letters spread left/right on a sine wave
+   * Calculate position along a 3D sine wave pattern
+   * User is at center (0,0,0), letters spread left/right on a flowing 3D wave
    *
    * Layout:
    * - Width: 5m (±2.5m from center) - comfortable viewing angle
-   * - Height: 0.8m sine wave variation (up/down organization)
-   * - Depth: Frequency-based zones with randomization (UPDATED for dramatic depth)
-   *   - Close (0.8-1.5m): Most frequent letters (E,T,A,O,I,N,S,R,H) - toward player
-   *   - Mid (1.5-2.8m): Medium frequency (L,D,C,U,M,F,P,G,W) - comfortable range
-   *   - Far (2.8-4.5m): Least frequent (Y,B,V,K,X,J,Q,Z) - farther back
+   * - Height: 0.8m sine wave variation (vertical undulation)
+   * - Depth: 1.2m cosine wave variation (depth undulation, creates 3D wave)
+   *   - Range: 1.3m (close) to 3.7m (far)
+   *   - Cosine creates offset from height sine wave for 3D effect
+   *
+   * Creates a unified 3D wave pattern where both height and depth undulate
+   * together as you scan left to right, not random frequency-based zones.
    *
    * @param index - Letter index (0-25 for A-Z)
-   * @param letter - The actual letter (for frequency lookup)
+   * @param letter - The actual letter (unused, kept for compatibility)
    * @param letterCount - Total letters (default 26)
-   * @param randomSeed - Random seed for consistent randomization (0-1)
-   * @returns 3D position on sine wave with frequency-based depth
+   * @param randomSeed - Random seed (unused, kept for compatibility)
+   * @returns 3D position on unified wave pattern
    */
   static calculateSineWavePosition(
     index: number,
@@ -290,35 +292,15 @@ export class WaveCalculator {
     // X: horizontal spread (alphabetically organized)
     const x = t * (waveWidth / 2);
 
-    // Y: sine wave height variation (organization only, not depth)
+    // Y: sine wave height variation
     // 2 full sine waves across the width
     const y = baseHeight + Math.sin(t * Math.PI * 2) * waveHeight;
 
-    // Z: frequency-based depth zones with randomization
-    // Adjusted to bring frequent letters closer to player (toward player's space)
-    // and push rare letters farther back for more dramatic depth variation
-    const zone = this.getLetterDepthZone(letter);
-    let baseDepth: number;
-    let randomRange: number;
-
-    switch (zone) {
-      case 'close':
-        baseDepth = 1.15;      // Center of 0.8-1.5m range (toward player - near space)
-        randomRange = 0.35;    // ±0.35m randomization
-        break;
-      case 'mid':
-        baseDepth = 2.15;      // Center of 1.5-2.8m range (comfortable mid-range)
-        randomRange = 0.65;    // ±0.65m randomization
-        break;
-      case 'far':
-        baseDepth = 3.65;      // Center of 2.8-4.5m range (farther back)
-        randomRange = 0.85;    // ±0.85m randomization
-        break;
-    }
-
-    // Add randomization within zone (seeded for consistency)
-    const randomOffset = (randomSeed - 0.5) * 2 * randomRange;
-    const z = baseDepth + randomOffset;
+    // Z: wave-based depth variation (creates 3D wave pattern)
+    // Use cosine so depth wave is offset from height wave
+    const baseDepth = 2.5;       // 2.5m average distance
+    const waveDepth = 1.2;       // 1.2m depth variation (0.8m to 4.5m range)
+    const z = baseDepth + Math.cos(t * Math.PI * 2) * waveDepth;
 
     return new Vector3(x, y, z);
   }
