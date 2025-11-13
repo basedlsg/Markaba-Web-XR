@@ -2,60 +2,58 @@
  * LetterAudio.ts
  *
  * Audio system for letter selection feedback
- * Maps each letter to a unique pitch based on phonetic properties
+ * Maps each letter to a unique pitch based on wave mathematics
  *
- * Pitch ranges based on synesthesia research:
- * - Vowels: 250-800 Hz (lower, more resonant)
- * - Voiced consonants: 250-4000 Hz (medium range)
- * - Unvoiced consonants: 2000-8000 Hz (higher, sharper)
+ * Frequency calculation follows the same wave pattern as spatial positioning:
+ * - Uses sine wave to create flowing frequency progression
+ * - Creates harmonic relationship between letters along the wave
+ * - Range: 220-880 Hz (A3 to A5) - 2-octave comfortable range
  */
 
 /**
- * Phonetic categories
+ * Calculate wave-based frequency for a letter
+ * Follows the same mathematical pattern as the spatial wave
+ *
+ * @param letter - Letter (A-Z)
+ * @returns Frequency in Hz
  */
-enum PhoneticCategory {
-  VOWEL = 'vowel',
-  VOICED_CONSONANT = 'voiced',
-  UNVOICED_CONSONANT = 'unvoiced'
+function calculateWaveFrequency(letter: string): number {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const index = alphabet.indexOf(letter.toUpperCase());
+
+  if (index === -1) return 440; // Default to A4 if invalid
+
+  // Map index (0-25) to t parameter (-1 to 1) - same as spatial calculation
+  const t = (index / 25) * 2 - 1;
+
+  // Base frequency range: 220 Hz (A3) to 880 Hz (A5) - 2 octaves
+  const minFreq = 220;  // A3
+  const maxFreq = 880;  // A5
+  const centerFreq = (minFreq + maxFreq) / 2;  // 550 Hz
+
+  // Use sine wave to create flowing frequency pattern
+  // This matches the spatial wave pattern: Y = sin(t * π * 2)
+  // Frequency undulates up and down along the alphabet like the spatial wave
+  const waveModulation = Math.sin(t * Math.PI * 2) * 0.5; // -0.5 to +0.5
+
+  // Calculate frequency: center ± wave modulation
+  // This creates a 2-octave range (4:1 ratio) with sine wave progression
+  const frequencyRatio = Math.pow(2, waveModulation); // Octave-based scaling
+  const frequency = centerFreq * frequencyRatio;
+
+  return frequency;
 }
 
 /**
- * Letter-to-pitch mapping
- * Each letter has a unique frequency based on its phonetic properties
+ * Letter-to-pitch mapping (generated from wave mathematics)
+ * Each letter has a unique frequency based on its position in the wave
  */
-const LETTER_PITCH_MAP: Record<string, { frequency: number; category: PhoneticCategory }> = {
-  // Vowels (250-800 Hz) - lower, more resonant
-  'A': { frequency: 440.0, category: PhoneticCategory.VOWEL },  // A4 (standard tuning reference)
-  'E': { frequency: 329.6, category: PhoneticCategory.VOWEL },  // E4
-  'I': { frequency: 587.3, category: PhoneticCategory.VOWEL },  // D5
-  'O': { frequency: 293.7, category: PhoneticCategory.VOWEL },  // D4
-  'U': { frequency: 523.3, category: PhoneticCategory.VOWEL },  // C5
+const LETTER_PITCH_MAP: Record<string, { frequency: number }> = {};
 
-  // Voiced consonants (250-4000 Hz) - medium range
-  'B': { frequency: 246.9, category: PhoneticCategory.VOICED_CONSONANT },  // B3
-  'D': { frequency: 493.9, category: PhoneticCategory.VOICED_CONSONANT },  // B4
-  'G': { frequency: 392.0, category: PhoneticCategory.VOICED_CONSONANT },  // G4
-  'J': { frequency: 659.3, category: PhoneticCategory.VOICED_CONSONANT },  // E5
-  'L': { frequency: 880.0, category: PhoneticCategory.VOICED_CONSONANT },  // A5
-  'M': { frequency: 261.6, category: PhoneticCategory.VOICED_CONSONANT },  // C4
-  'N': { frequency: 349.2, category: PhoneticCategory.VOICED_CONSONANT },  // F4
-  'R': { frequency: 739.9, category: PhoneticCategory.VOICED_CONSONANT },  // F#5
-  'V': { frequency: 987.8, category: PhoneticCategory.VOICED_CONSONANT },  // B5
-  'W': { frequency: 1174.7, category: PhoneticCategory.VOICED_CONSONANT }, // D6
-  'Y': { frequency: 1318.5, category: PhoneticCategory.VOICED_CONSONANT }, // E6
-  'Z': { frequency: 1568.0, category: PhoneticCategory.VOICED_CONSONANT }, // G6
-
-  // Unvoiced consonants (2000-8000 Hz) - higher, sharper
-  'C': { frequency: 2093.0, category: PhoneticCategory.UNVOICED_CONSONANT }, // C7
-  'F': { frequency: 2349.3, category: PhoneticCategory.UNVOICED_CONSONANT }, // D7
-  'H': { frequency: 2637.0, category: PhoneticCategory.UNVOICED_CONSONANT }, // E7
-  'K': { frequency: 2793.8, category: PhoneticCategory.UNVOICED_CONSONANT }, // F7
-  'P': { frequency: 3136.0, category: PhoneticCategory.UNVOICED_CONSONANT }, // G7
-  'Q': { frequency: 3520.0, category: PhoneticCategory.UNVOICED_CONSONANT }, // A7
-  'S': { frequency: 3951.1, category: PhoneticCategory.UNVOICED_CONSONANT }, // B7
-  'T': { frequency: 4186.0, category: PhoneticCategory.UNVOICED_CONSONANT }, // C8
-  'X': { frequency: 4698.6, category: PhoneticCategory.UNVOICED_CONSONANT }, // D8
-};
+// Pre-calculate frequencies for all letters
+'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(letter => {
+  LETTER_PITCH_MAP[letter] = { frequency: calculateWaveFrequency(letter) };
+});
 
 /**
  * Audio context manager for letter sounds
@@ -210,14 +208,17 @@ export class LetterAudioManager {
   }
 
   /**
-   * Get phonetic category for a letter
+   * Get wave position (t value) for a letter
+   * Used for visualizing frequency mapping
    *
    * @param letter - Letter (A-Z)
-   * @returns Phonetic category or null
+   * @returns Wave position from -1 to 1, or null if invalid
    */
-  getLetterCategory(letter: string): PhoneticCategory | null {
-    const pitchData = LETTER_PITCH_MAP[letter.toUpperCase()];
-    return pitchData ? pitchData.category : null;
+  getLetterWavePosition(letter: string): number | null {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const index = alphabet.indexOf(letter.toUpperCase());
+    if (index === -1) return null;
+    return (index / 25) * 2 - 1;
   }
 
   /**
