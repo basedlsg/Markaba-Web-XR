@@ -259,7 +259,7 @@ export class WaveCalculator {
    * User is at center (0,0,0), letters spread left/right on a flowing 3D wave
    *
    * Layout:
-   * - Width: 5m (±2.5m from center) - comfortable viewing angle
+   * - Width: 12.5m (±6.25m from center) - 2.5x spacing for comfortable reach
    * - Height: 0.8m sine wave variation (vertical undulation)
    * - Depth: 1.2m cosine wave variation (depth undulation, creates 3D wave)
    *   - Range: 1.3m (close) to 3.7m (far)
@@ -281,7 +281,7 @@ export class WaveCalculator {
     randomSeed: number = 0.5
   ): Vector3 {
     // Layout parameters (balanced for comfort)
-    const waveWidth = 5.0;       // 5m wide (±2.5m left/right)
+    const waveWidth = 12.5;      // 12.5m wide (±6.25m left/right) - 2.5x spacing
     const waveHeight = 0.8;      // 0.8m vertical sine wave
     const baseHeight = 1.5;      // 1.5m eye level
 

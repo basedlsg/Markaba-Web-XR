@@ -371,7 +371,7 @@ export class BubbleManager {
  * This is the default for the VR text input system
  *
  * Layout design using unified 3D wave pattern:
- * - Width: 5m (±2.5m left/right) - comfortable viewing angle
+ * - Width: 12.5m (±6.25m left/right) - 2.5x spacing for comfortable reach
  * - Height: 0.8m sine wave variation (vertical undulation)
  * - Depth: 1.2m cosine wave variation (depth undulation)
  *   - Range: 1.3m (close) to 3.7m (far)
