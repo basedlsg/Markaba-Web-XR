@@ -373,10 +373,10 @@ export class BubbleManager {
  * Layout design based on corpus linguistics research:
  * - Width: 5m (±2.5m left/right) - comfortable viewing angle
  * - Height: 0.8m sine wave variation (organizational structure)
- * - Depth: Frequency-based zones with randomization
- *   - Most frequent letters (E,T,A,O,I,N,S,R,H): 2.2-2.7m (close, easy reach)
- *   - Medium frequency (L,D,C,U,M,F,P,G,W): 2.7-3.5m (mid-range)
- *   - Least frequent (Y,B,V,K,X,J,Q,Z): 3.5-4.3m (farther, still visible)
+ * - Depth: Frequency-based zones with randomization (UPDATED for dramatic depth)
+ *   - Most frequent letters (E,T,A,O,I,N,S,R,H): 0.8-1.5m (toward player, near space)
+ *   - Medium frequency (L,D,C,U,M,F,P,G,W): 1.5-2.8m (comfortable mid-range)
+ *   - Least frequent (Y,B,V,K,X,J,Q,Z): 2.8-4.5m (farther back, still visible)
  * - Alphabetically organized left-to-right (A→Z)
  * - Individual breathing motion (each letter breathes independently)
  * - User positioned in center of layout

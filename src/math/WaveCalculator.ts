@@ -260,11 +260,11 @@ export class WaveCalculator {
    *
    * Layout:
    * - Width: 5m (±2.5m from center) - comfortable viewing angle
-   * - Height: 1m sine wave variation (up/down organization)
-   * - Depth: Frequency-based zones with randomization
-   *   - Close (2.2-2.7m): Most frequent letters (E,T,A,O,I,N,S,R,H)
-   *   - Mid (2.7-3.5m): Medium frequency (L,D,C,U,M,F,P,G,W)
-   *   - Far (3.5-4.3m): Least frequent (Y,B,V,K,X,J,Q,Z)
+   * - Height: 0.8m sine wave variation (up/down organization)
+   * - Depth: Frequency-based zones with randomization (UPDATED for dramatic depth)
+   *   - Close (0.8-1.5m): Most frequent letters (E,T,A,O,I,N,S,R,H) - toward player
+   *   - Mid (1.5-2.8m): Medium frequency (L,D,C,U,M,F,P,G,W) - comfortable range
+   *   - Far (2.8-4.5m): Least frequent (Y,B,V,K,X,J,Q,Z) - farther back
    *
    * @param index - Letter index (0-25 for A-Z)
    * @param letter - The actual letter (for frequency lookup)
@@ -295,22 +295,24 @@ export class WaveCalculator {
     const y = baseHeight + Math.sin(t * Math.PI * 2) * waveHeight;
 
     // Z: frequency-based depth zones with randomization
+    // Adjusted to bring frequent letters closer to player (toward player's space)
+    // and push rare letters farther back for more dramatic depth variation
     const zone = this.getLetterDepthZone(letter);
     let baseDepth: number;
     let randomRange: number;
 
     switch (zone) {
       case 'close':
-        baseDepth = 2.45;      // Center of 2.2-2.7m range
-        randomRange = 0.25;    // ±0.25m randomization
+        baseDepth = 1.15;      // Center of 0.8-1.5m range (toward player - near space)
+        randomRange = 0.35;    // ±0.35m randomization
         break;
       case 'mid':
-        baseDepth = 3.1;       // Center of 2.7-3.5m range
-        randomRange = 0.4;     // ±0.4m randomization
+        baseDepth = 2.15;      // Center of 1.5-2.8m range (comfortable mid-range)
+        randomRange = 0.65;    // ±0.65m randomization
         break;
       case 'far':
-        baseDepth = 3.9;       // Center of 3.5-4.3m range
-        randomRange = 0.4;     // ±0.4m randomization
+        baseDepth = 3.65;      // Center of 2.8-4.5m range (farther back)
+        randomRange = 0.85;    // ±0.85m randomization
         break;
     }
 
