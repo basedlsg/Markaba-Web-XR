@@ -255,8 +255,23 @@ export class WaveCalculator {
   }
 
   /**
+   * QWERTY keyboard layout with wave-based positioning
+   * Combines ergonomic QWERTY ordering with beautiful wave mathematics
+   *
+   * Solution to Dr. Tanaka's concern: "beautiful AND useful"
+   * - QWERTY ordering = useful (familiar, optimized for English)
+   * - Wave-based positioning = beautiful (natural 3D flow)
+   */
+  static readonly QWERTY_LAYOUT = {
+    // QWERTY rows mapped to wave positions
+    'Q': 0, 'W': 1, 'E': 2, 'R': 3, 'T': 4, 'Y': 5, 'U': 6, 'I': 7, 'O': 8, 'P': 9,  // Row 1
+    'A': 10, 'S': 11, 'D': 12, 'F': 13, 'G': 14, 'H': 15, 'J': 16, 'K': 17, 'L': 18,   // Row 2
+    'Z': 19, 'X': 20, 'C': 21, 'V': 22, 'B': 23, 'N': 24, 'M': 25                      // Row 3
+  } as const;
+
+  /**
    * Calculate position along a 3D sine wave pattern
-   * User is at center (0,0,0), letters spread left/right on a flowing 3D wave
+   * NOW SUPPORTS BOTH: Alphabetical (legacy) and QWERTY (recommended)
    *
    * Layout:
    * - Width: 12.5m (±6.25m from center) - 2.5x spacing for comfortable reach
@@ -266,30 +281,34 @@ export class WaveCalculator {
    *   - Cosine creates offset from height sine wave for 3D effect
    *
    * Creates a unified 3D wave pattern where both height and depth undulate
-   * together as you scan left to right, not random frequency-based zones.
+   * together as you scan left to right.
    *
-   * @param index - Letter index (0-25 for A-Z)
-   * @param letter - The actual letter (unused, kept for compatibility)
+   * @param index - Letter index (0-25 for A-Z alphabetical)
+   * @param letter - The actual letter (used for QWERTY mapping if enabled)
    * @param letterCount - Total letters (default 26)
    * @param randomSeed - Random seed (unused, kept for compatibility)
+   * @param useQWERTY - Use QWERTY ordering instead of alphabetical (default: true)
    * @returns 3D position on unified wave pattern
    */
   static calculateSineWavePosition(
     index: number,
     letter: string,
     letterCount: number = 26,
-    randomSeed: number = 0.5
+    randomSeed: number = 0.5,
+    useQWERTY: boolean = true
   ): Vector3 {
+    // Use QWERTY position if enabled, otherwise use alphabetical index
+    const waveIndex = useQWERTY ? (this.QWERTY_LAYOUT[letter.toUpperCase() as keyof typeof this.QWERTY_LAYOUT] ?? index) : index;
     // Layout parameters (balanced for comfort)
     const waveWidth = 12.5;      // 12.5m wide (±6.25m left/right) - 2.5x spacing
     const waveHeight = 0.8;      // 0.8m vertical sine wave
     const baseHeight = 1.5;      // 1.5m eye level
 
-    // Calculate horizontal position from left to right (alphabetical)
-    // t ranges from -1 (leftmost 'A') to +1 (rightmost 'Z')
-    const t = (index / (letterCount - 1)) * 2 - 1;
+    // Calculate horizontal position using wave index
+    // t ranges from -1 (leftmost position) to +1 (rightmost position)
+    const t = (waveIndex / (letterCount - 1)) * 2 - 1;
 
-    // X: horizontal spread (alphabetically organized)
+    // X: horizontal spread (QWERTY or alphabetically organized)
     const x = t * (waveWidth / 2);
 
     // Y: sine wave height variation

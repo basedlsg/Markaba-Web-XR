@@ -11,6 +11,9 @@ dist/
 .env.local
 .env.*.local
 
+# Secrets (API keys)
+src/config/secrets.ts
+
 # Editor
 .vscode/
 .idea/

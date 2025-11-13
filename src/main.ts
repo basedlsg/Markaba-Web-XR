@@ -13,6 +13,8 @@ import { DebugUI, setupDebugShortcuts } from './ui/DebugUI';
 import { TextDisplayManager } from './ui/TextDisplay';
 import { LetterAudioManager } from './audio/LetterAudio';
 import { DataCollector } from './ml/DataCollector';
+import { createPredictiveText, GroqPredictiveText, LetterPrediction } from './ai/PredictiveText';
+import { AI_CONFIG } from './config/AIConfig';
 import { WebXRState } from '@babylonjs/core';
 
 /**
@@ -26,6 +28,7 @@ class App {
   private textDisplay!: TextDisplayManager;
   private audioManager!: LetterAudioManager;
   private dataCollector!: DataCollector;
+  private predictiveText!: GroqPredictiveText;
 
   // Hand proximity tracking
   private lastNearBubbleLeft: any = null;
@@ -35,6 +38,10 @@ class App {
   // Debounce to prevent duplicate letter entries
   private lastSelectedTime: number = 0;
   private readonly SELECTION_DEBOUNCE = 500; // 500ms between selections
+
+  // AI predictions
+  private currentPredictions: LetterPrediction[] = [];
+  private predictionUpdateTimeout: number | null = null;
 
   async initialize() {
     console.log("🚀 Initializing Markaba Web XR...");
@@ -73,6 +80,10 @@ class App {
       // Initialize ML data collector
       console.log("Initializing ML data collector...");
       this.dataCollector = new DataCollector();
+
+      // Initialize AI predictive text (Groq API)
+      console.log("Initializing AI predictive text...");
+      this.predictiveText = createPredictiveText(AI_CONFIG.groqApiKey);
 
       // Setup click interaction for desktop testing
       this.setupClickInteraction(scene);
@@ -163,6 +174,9 @@ class App {
               mousePos,
               bubble.instance.position
             );
+
+            // Update AI predictions for next letter
+            this.updatePredictions();
 
             // Play the letter's sound
             this.audioManager.playLetterTone(bubble.letter);
@@ -291,6 +305,57 @@ class App {
   }
 
   /**
+   * Update AI predictions based on current text
+   * Predicts next likely letters and highlights them visually
+   */
+  private async updatePredictions(): Promise<void> {
+    // Clear existing prediction timeout
+    if (this.predictionUpdateTimeout !== null) {
+      clearTimeout(this.predictionUpdateTimeout);
+    }
+
+    // Debounce predictions (wait 200ms after last keystroke)
+    this.predictionUpdateTimeout = window.setTimeout(async () => {
+      const currentText = this.textDisplay.getText();
+
+      // Get last 20 characters for context (LLMs work better with recent context)
+      const context = currentText.slice(-20);
+
+      console.log(`🤖 Predicting next letters for: "${context}"`);
+
+      try {
+        // Get predictions from Groq AI
+        const predictions = await this.predictiveText.predictNextLetters(context, 5);
+        this.currentPredictions = predictions;
+
+        console.log('✨ Predictions:', predictions.map(p => `${p.letter} (${(p.probability * 100).toFixed(0)}%)`).join(', '));
+
+        // Reset all bubble highlights
+        for (let i = 0; i < this.bubbleManager.getBubbleCount(); i++) {
+          const bubble = this.bubbleManager['bubbles'][i];
+          this.bubbleManager.resetBubble(bubble);
+        }
+
+        // Highlight predicted letters
+        for (const prediction of predictions) {
+          // Find bubble with this letter
+          for (let i = 0; i < this.bubbleManager.getBubbleCount(); i++) {
+            const bubble = this.bubbleManager['bubbles'][i];
+            if (bubble.letter === prediction.letter) {
+              // Highlight with intensity based on probability
+              const intensity = 1.0 + (prediction.probability * 0.8); // 1.0 to 1.8
+              this.bubbleManager.highlightBubble(bubble, intensity);
+              break;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Prediction error:', error);
+      }
+    }, 200); // 200ms debounce
+  }
+
+  /**
    * Check if a hand is near any bubble and trigger feedback
    *
    * @param handType - 'left' or 'right'
@@ -342,6 +407,9 @@ class App {
             handPos,
             nearestBubble.instance.position
           );
+
+          // Update AI predictions for next letter
+          this.updatePredictions();
 
           this.lastSelectedTime = now;
         }

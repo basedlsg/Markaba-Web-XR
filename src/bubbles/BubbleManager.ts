@@ -192,20 +192,25 @@ export class BubbleManager {
       let worldPos: Vector3;
 
       if (useArcLayout) {
-        // Sine wave layout: Static wave pattern with individual breathing
-        // Each letter breathes independently at its own pace
+        // Wave-based keyboard: Use actual wave interference + breathing
+        // This applies the core wave mathematics to create natural, flowing motion
 
-        // Start with base static position
-        worldPos = bubble.basePosition.clone();
+        // Convert 3D base position to 2D grid position for wave calculations
+        const gridPos = new Vector2(bubble.basePosition.x, bubble.basePosition.z);
 
-        // Add individual breathing motion for each letter
-        // Each letter has its own phase so they don't all move together
-        const breathingSpeed = 0.8; // Slow, calm breathing (~2 second cycle)
-        const breathingPhase = currentTime * breathingSpeed + bubble.phase;
-        const breathingAmount = Math.sin(breathingPhase) * 0.15; // 15cm forward/back motion
+        // Calculate position using full wave interference mathematics
+        // This includes primary, secondary, tertiary waves + interference patterns
+        worldPos = WaveCalculator.calculateBubblePosition(
+          gridPos,
+          currentTime,
+          bubble.phase,
+          this.waveSettings,
+          this.breathingSettings
+        );
 
-        // Apply breathing along Z axis (toward/away from user)
-        worldPos.z += breathingAmount;
+        // Preserve the Y height from the original sine wave layout
+        // This maintains the visual wave pattern while allowing X/Z wave dynamics
+        worldPos.y = bubble.basePosition.y;
       } else {
         // Legacy grid layout: Use full wave + breathing animation
         const gridPos = new Vector2(bubble.basePosition.x, bubble.basePosition.z);
